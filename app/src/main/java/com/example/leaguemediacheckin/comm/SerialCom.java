@@ -1,12 +1,14 @@
-package com.example.leaguemediacheckin.com;
+package com.example.leaguemediacheckin.comm;
 
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
+import android.os.Handler;
 import android.util.Log;
 
+import com.example.leaguemediacheckin.MainActivity;
 import com.hoho.android.usbserial.driver.UsbSerialDriver;
 import com.hoho.android.usbserial.driver.UsbSerialPort;
 import com.hoho.android.usbserial.driver.UsbSerialProber;
@@ -15,9 +17,14 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Observable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 
-public class SerialCom {
+
+
+public class SerialCom extends Observable {
     public final int HORIZONTAL = 1;
     public final int VERTICAL = 2;
     public final int FOCUS = 3;
@@ -28,6 +35,9 @@ public class SerialCom {
     private List<UsbSerialDriver> availableDrivers;
     private UsbSerialDriver driver;
     private Semaphore commLock; //semaphore to prevent multiple simultaneous messages
+    private ExecutorService executor;
+    private Handler handler;
+    private boolean reader_running;
 
 
     public SerialCom(Context context) {
@@ -36,8 +46,10 @@ public class SerialCom {
         commLock = new Semaphore(1);
         driver = null;
         manager = (UsbManager) context.getSystemService(Context.USB_SERVICE);
+        reader_running = true;
 
-
+        //Set up reader thread
+        executor = Executors.newSingleThreadExecutor();
     }
 
     public void requestPermission(){
@@ -79,15 +91,9 @@ public class SerialCom {
                 port.open(connection);
                 port.setParameters(57600, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE);
 
-                //Inistialize controller
-                byte outbuff[] = "init\n".getBytes();
-                int bytesWritten = 0;
-//                while (outbuff.length > bytesWritten){
-                    port.write(Arrays.copyOfRange(outbuff, bytesWritten, outbuff.length), 1000);
 
-//                }
 
-                //read initialization response
+                //Clear buffer
                 try {
                     Thread.sleep(1500);
                 } catch (InterruptedException e) {
@@ -105,16 +111,11 @@ public class SerialCom {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-
-
-                port.write("xdmp2\n".getBytes(), 1000);
                 commLock.release();
-                if(read.toString().contains("controller_ready")){
-                    return 0;
-                }
-                else {
-                    return 0;
-                }
+                executor.execute(new MessageReader());
+                executor.shutdown();
+
+                return 0;
             } catch (IOException e) {
                 e.printStackTrace();
                 return -1;
@@ -141,4 +142,65 @@ public class SerialCom {
             return 0;
         }
     }
+
+    private class MessageReader implements Runnable{
+
+
+        @Override
+        public void run() {
+            Log.d("Serially","I'm here and running!");
+
+            try {
+                commLock.acquire();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            byte[] readbuffer = new byte[800];
+            StringBuilder uid_read = new StringBuilder();
+            int numBytesRead;
+            while(reader_running) {
+                numBytesRead = 0;
+                try {
+                    numBytesRead = port.read(readbuffer, 50);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                //Separate UIDs read
+                char curr_char;
+                for (int i = 0; i < numBytesRead; i++){
+                    curr_char = (char)readbuffer[i];
+                    uid_read.append(curr_char);
+
+                    //We only get the first complete UID and toss the rest because lessbe honest
+                    //2 people aren't going to scan badges with 100ms of each other
+                    if (curr_char == '\n') {
+                        Log.d("Serially", uid_read.toString());
+                        MainActivity main = (MainActivity) context;
+                        main.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                setChanged();
+                                notifyObservers(new String(uid_read.toString()));
+                                Log.d("Serially","handler triggered");
+                                uid_read.setLength(0);
+                            }
+                        });
+                        break;
+                    }
+                }
+
+
+//                Log.d("Serially", new String(readbuffer, 0, numBytesRead));
+                Arrays.fill(readbuffer,(byte)0);
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            commLock.release();
+        }
+    }
+
 }
