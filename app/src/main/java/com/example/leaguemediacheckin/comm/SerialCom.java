@@ -175,13 +175,13 @@ public class SerialCom extends Observable {
                     //We only get the first complete UID and toss the rest because lessbe honest
                     //2 people aren't going to scan badges with 100ms of each other
                     if (curr_char == '\n') {
-                        Log.d("Serially", uid_read.toString());
+                        Log.d("Serially", uid_read.toString().replaceAll("\\s", ""));
                         MainActivity main = (MainActivity) context;
                         main.runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
                                 setChanged();
-                                notifyObservers(new String(uid_read.toString()));
+                                notifyObservers(new String(uid_read.toString()).replaceAll("\\s", ""));
                                 Log.d("Serially","handler triggered");
                                 uid_read.setLength(0);
                             }

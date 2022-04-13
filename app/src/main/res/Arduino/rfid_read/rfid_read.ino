@@ -30,7 +30,6 @@ void loop() {
 	}
 
 	// Dump debug info about the card; PICC_HaltA() is automatically called.
-//      MFRC522Debug::PICC_DumpToSerial(mfrc522, Serial, &(mfrc522.uid));
     MFRC522Debug::PrintUID(Serial, mfrc522.uid);
     mfrc522.PICC_HaltA();
     Serial.write("\n");

@@ -11,6 +11,7 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.example.leaguemediacheckin.MainActivity;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -67,21 +68,24 @@ public class SendRep extends AsyncTask<Void,Void,String> {
             e.printStackTrace();
         }
 
-        String scriptURL = ip_address + "/findrep?fn=" + badge_uid;
+        String scriptURL = ip_address + "/searchrep?uid=" + badge_uid;
 
 
         return new StringRequest(Request.Method.GET, scriptURL,
                 new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
+                        callBack.onSuccess(response.toString());
+                        MainActivity activity = (MainActivity) context;
+                        activity.searchRepCallback(response);
 //                        RepInfoActivity activity = (RepInfoActivity) context;
 //                        activity.makeToast("You're all Checked in!");
                     }
                 }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                callBack.onFail();
-                Log.d("network error", error.toString());
+                MainActivity activity = (MainActivity) context;
+                activity.searchRepCallback("fail");
             }
         });
     }
