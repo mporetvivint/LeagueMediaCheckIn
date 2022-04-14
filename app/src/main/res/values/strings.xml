@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">League Media Check In</string>
+    <string name="instructions">PLEASE PROCEED TO THE\nGREEN SCREEN</string>
+    <string name="reconnect">Please disconnect and reconnect the scanner</string>
 </resources>

@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "856449938530",
+    "project_id": "league-media-check-in",
+    "storage_bucket": "league-media-check-in.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:856449938530:android:2ea0293cfa27bc49ed0d3b",
+        "android_client_info": {
+          "package_name": "com.example.leaguemediacheckin"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "856449938530-tkmsftgplari8isdvlu7lqm6ijbobkh3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAMGlo2RB5glWG0i5_LnvbeZGb4f0V4RbQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "856449938530-tkmsftgplari8isdvlu7lqm6ijbobkh3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -52,7 +52,7 @@ public class SerialCom extends Observable {
         executor = Executors.newSingleThreadExecutor();
     }
 
-    public void requestPermission(){
+    public int requestPermission(){
         //Request Permission
         availableDrivers = UsbSerialProber.getDefaultProber().findAllDrivers(manager);
         for(int i = 0; i < availableDrivers.size(); i ++) {
@@ -60,8 +60,10 @@ public class SerialCom extends Observable {
             if (manufacture.contains("Arduino")) {
                 driver = availableDrivers.get(i);
                 manager.requestPermission(driver.getDevice(), PendingIntent.getActivity(context,1,new Intent(), PendingIntent.FLAG_UPDATE_CURRENT));
+                return 0;
             }
         }
+        return -1;
     }
 
     public int connectArduino(){
