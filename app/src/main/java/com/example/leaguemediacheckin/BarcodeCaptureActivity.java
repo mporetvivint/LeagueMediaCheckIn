@@ -283,7 +283,6 @@ public final class BarcodeCaptureActivity extends AppCompatActivity{
         int valueType = barcode.getValueType();
 
         if (FirebaseVisionBarcode.TYPE_URL == valueType) {
-            String title = barcode.getUrl().getTitle();
             String url = barcode.getUrl().getUrl();
             Log.d("B-Code", url);
 

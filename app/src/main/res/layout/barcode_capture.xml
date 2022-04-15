@@ -14,6 +14,31 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
+        <LinearLayout
+            android:id="@+id/linearLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintTop_toTopOf="@+id/preview">
+
+            <EditText
+                android:id="@+id/txt_ip_entry"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ems="10"
+                android:hint="@string/ip_prompt"
+                android:inputType="textPersonName" />
+
+            <Button
+                android:id="@+id/btn_ip_entry"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Save" />
+
+        </LinearLayout>
+
         <com.example.leaguemediacheckin.CameraSourcePreview
             android:id="@+id/preview"
             android:layout_width="0dp"
@@ -31,13 +56,12 @@
             android:id="@+id/textView2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:text="Please scan barcode"
+            android:text="@string/qr_prompt"
             android:textColor="@android:color/darker_gray"
             android:textSize="50sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/preview" />
+            app:layout_constraintTop_toBottomOf="@+id/linearLayout" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </LinearLayout>
