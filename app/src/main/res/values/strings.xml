@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">League Media Check In</string>
+    <string name="instructions">PLEASE PROCEED TO THE\nGREEN SCREEN</string>
+    <string name="reconnect">Please disconnect and reconnect the scanner</string>
+    <string name="ip_prompt">Enter IP address Here</string>
+    <string name="qr_prompt">Or Scan QR Code</string>
 </resources>
