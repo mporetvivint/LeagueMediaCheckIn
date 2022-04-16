@@ -8,6 +8,8 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.HandlerThread;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -31,6 +33,7 @@ public class MainActivity extends AppCompatActivity {
     Button btn_connect;
     int fail_timeout;
     Handler fail_handler;
+    HandlerThread fail_thread;
     boolean fail_handler_running;
     Semaphore fail_semaphore;
 
@@ -66,7 +69,9 @@ public class MainActivity extends AppCompatActivity {
 
         //Setup "Try Again" UI
         fail_timeout = 15;
-        fail_handler = new Handler();
+        fail_thread = new HandlerThread("FailThread");
+        fail_thread.start();
+        fail_handler = new Handler(fail_thread.getLooper());
         fail_handler_running = false;
         fail_semaphore = new Semaphore(1);
 
@@ -124,11 +129,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void searchRep(String badge_uid){
+        Log.d("Serially", "Searching rep" + badge_uid);
         SendRep sendRep = new SendRep(this.getIntent().getStringExtra("url"),badge_uid, new OnEventListener() {
             @Override
             public void onSuccess(Object object) {
-
-
                 int i = 0;
             }
 
@@ -143,10 +147,10 @@ public class MainActivity extends AppCompatActivity {
 //    Function to handle changing and timing the "try again" screen
 //    @param: int number of seconds to set timer to, 0 means stop
     private void failedUIHandler(int time){
+        MediaPlayer mediaPlayer = MediaPlayer.create(txt_name.getContext(), R.raw.error_sound);
+        mediaPlayer.start();
         if(!fail_handler_running){
             gifView.setImageResource(R.drawable.scan_again);
-            MediaPlayer mediaPlayer = MediaPlayer.create(txt_name.getContext(), R.raw.error_sound);
-            mediaPlayer.start();
             fail_handler.post(new Runnable() {
                 @Override
                 public void run() {
@@ -174,7 +178,7 @@ public class MainActivity extends AppCompatActivity {
                     if(!busy) { //If a rep has been accepted we are not going to change the UI
                         gifView.setImageResource(R.drawable.main_bg);
                     }
-
+                    fail_handler_running = false; //We are done running
                 }
             });
         }
@@ -190,7 +194,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void searchRepCallback(String response){
-
         if(response.equals("fail")){
             failedUIHandler(15);
             return;

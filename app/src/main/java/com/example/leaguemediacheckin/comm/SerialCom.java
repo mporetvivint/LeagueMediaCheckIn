@@ -62,6 +62,9 @@ public class SerialCom extends Observable {
                 manager.requestPermission(driver.getDevice(), PendingIntent.getActivity(context,1,new Intent(), PendingIntent.FLAG_UPDATE_CURRENT));
                 return 0;
             }
+//            else if(){
+//
+//            }
         }
         return -1;
     }
@@ -184,7 +187,6 @@ public class SerialCom extends Observable {
                             public void run() {
                                 setChanged();
                                 notifyObservers(new String(uid_read.toString()).replaceAll("\\s", ""));
-                                Log.d("Serially","handler triggered");
                                 uid_read.setLength(0);
                             }
                         });

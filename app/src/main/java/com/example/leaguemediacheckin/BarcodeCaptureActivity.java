@@ -51,6 +51,9 @@ public final class BarcodeCaptureActivity extends AppCompatActivity{
     private CameraSource mCameraSource;
     private CameraSourcePreview mPreview;
 
+    private TextView txt_ip;
+    private Button btn_ip;
+
     /**
      * Initializes the UI and creates the detector pipeline.
      */
@@ -73,6 +76,17 @@ public final class BarcodeCaptureActivity extends AppCompatActivity{
             requestCameraPermission();
         }
 
+        txt_ip = findViewById(R.id.txt_ip_entry);
+        btn_ip = findViewById(R.id.btn_ip_entry);
+        btn_ip.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String ip_address = txt_ip.getText().toString();
+                if(ip_address.equals(""))
+                    return;
+                startTeleprompterActivity(ip_address);
+            }
+        });
     }
 
 
