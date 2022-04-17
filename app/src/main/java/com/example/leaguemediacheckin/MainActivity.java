@@ -149,6 +149,8 @@ public class MainActivity extends AppCompatActivity {
         this.busy = busy;
         if(!busy) {
             gifView.setImageResource(R.drawable.main_bg);
+            txt_name.animate().alpha(0f).setDuration(50).start();
+            txt_proceed.animate().alpha(0f).setDuration(50).start();
         }
     }
 
@@ -239,9 +241,11 @@ public class MainActivity extends AppCompatActivity {
         Handler handler = new Handler();
         handler.postDelayed(new Runnable() {
             public void run() {
-                gifView.setImageResource(R.drawable.please_wait);
-                txt_name.animate().alpha(0f).setDuration(50).start();
-                txt_proceed.animate().alpha(0f).setDuration(50).start();
+                if(busy) {
+                    gifView.setImageResource(R.drawable.please_wait);
+                    txt_name.animate().alpha(0f).setDuration(50).start();
+                    txt_proceed.animate().alpha(0f).setDuration(50).start();
+                }
             }
         }, 10000);
     }

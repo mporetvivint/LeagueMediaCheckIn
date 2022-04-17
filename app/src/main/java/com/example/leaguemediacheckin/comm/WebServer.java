@@ -33,8 +33,29 @@ public class WebServer extends NanoHTTPD {
         String uri = session.getUri();
 
         if (uri.equals("/endSession")) {
-            main.setBusy(false);
+            main.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    main.setBusy(false);
+
+                }
+            });
             return newFixedLengthResponse(Response.Status.OK,MIME_PLAINTEXT,"SessionEnded");
+        }
+        if (uri.equals("/beginSession")){
+            try {
+                String name = session.getParameters().get("name").get(0);
+                main.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        main.searchRepCallback(name);
+                    }
+                });
+            }catch (NullPointerException e){
+                e.printStackTrace();
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST,MIME_PLAINTEXT,"No Name Found");
+            }
+            return newFixedLengthResponse(Response.Status.OK,MIME_PLAINTEXT,"SessionStarted");
         }
         return newFixedLengthResponse(Response.Status.BAD_REQUEST,MIME_PLAINTEXT,"Watchu takin' bout??");
     }
