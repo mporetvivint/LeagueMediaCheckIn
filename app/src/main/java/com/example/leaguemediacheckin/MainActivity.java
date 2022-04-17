@@ -19,7 +19,9 @@ import android.widget.Toast;
 import com.example.leaguemediacheckin.comm.OnEventListener;
 import com.example.leaguemediacheckin.comm.SendRep;
 import com.example.leaguemediacheckin.comm.UsbComm;
+import com.example.leaguemediacheckin.comm.WebServer;
 
+import java.io.IOException;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.concurrent.Semaphore;
@@ -38,6 +40,7 @@ public class MainActivity extends AppCompatActivity {
     boolean fail_handler_running;
     Semaphore fail_semaphore;
     UsbComm usbComm;
+    int portNumber;
 
     private boolean busy; //State variable if we are accepting new scans
     private final Observer arduino_callback = new Observer() {
@@ -105,6 +108,22 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        //Setup web server
+        //Start Server We'll Loop until we get a good port number
+        boolean searching = true;
+        portNumber = 8922;
+        while (searching) {
+            WebServer server = new WebServer(portNumber, this);
+            try {
+                server.start();
+            } catch (IOException e) {
+                e.printStackTrace();
+                portNumber++;
+            } finally {
+                searching = false;
+            }
+        }
+
     }
 
     private void hideSystemBars() {
@@ -128,6 +147,9 @@ public class MainActivity extends AppCompatActivity {
 
     public void setBusy(boolean busy) {
         this.busy = busy;
+        if(!busy) {
+            gifView.setImageResource(R.drawable.main_bg);
+        }
     }
 
     private void searchRep(String badge_uid){

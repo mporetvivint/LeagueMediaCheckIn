@@ -44,4 +44,5 @@ dependencies {
     implementation 'com.google.firebase:firebase-ml-vision-barcode-model:16.0.2'
     implementation 'com.google.zxing:core:3.3.0'
     implementation 'pl.droidsonroids.gif:android-gif-drawable:1.2.17'
+    implementation 'org.nanohttpd:nanohttpd:2.3.1'
 }
