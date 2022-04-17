@@ -5,6 +5,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 
+import android.app.PendingIntent;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
@@ -17,7 +18,7 @@ import android.widget.Toast;
 
 import com.example.leaguemediacheckin.comm.OnEventListener;
 import com.example.leaguemediacheckin.comm.SendRep;
-import com.example.leaguemediacheckin.comm.SerialCom;
+import com.example.leaguemediacheckin.comm.UsbComm;
 
 import java.util.Observable;
 import java.util.Observer;
@@ -36,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
     HandlerThread fail_thread;
     boolean fail_handler_running;
     Semaphore fail_semaphore;
+    UsbComm usbComm;
 
     private boolean busy; //State variable if we are accepting new scans
     private final Observer arduino_callback = new Observer() {
@@ -75,24 +77,24 @@ public class MainActivity extends AppCompatActivity {
         fail_handler_running = false;
         fail_semaphore = new Semaphore(1);
 
-        SerialCom serialCom = new SerialCom(this);
-        if(serialCom.requestPermission()==-1){
+        usbComm = new UsbComm(this);
+        if(usbComm.requestPermission()==-1){
             Toast.makeText(this,R.string.reconnect,Toast.LENGTH_LONG).show();
         }
-        if(serialCom.connectArduino() == -1){
+        if(usbComm.connect() == -1){
             //We need to prompt for connection
             btn_connect.setEnabled(true);
             btn_connect.setAlpha(1f);
         }
         else{
-            serialCom.addObserver(arduino_callback);
+            usbComm.addObserver(arduino_callback);
         }
 
         btn_connect.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(serialCom.connectArduino() == 0){
-                    serialCom.addObserver(arduino_callback);
+                if(usbComm.connect() == 0){
+                    usbComm.addObserver(arduino_callback);
                     //hide button
                     btn_connect.setAlpha(0f);
                     btn_connect.setEnabled(false);
@@ -222,4 +224,9 @@ public class MainActivity extends AppCompatActivity {
         }, 10000);
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        usbComm.close();
+    }
 }
