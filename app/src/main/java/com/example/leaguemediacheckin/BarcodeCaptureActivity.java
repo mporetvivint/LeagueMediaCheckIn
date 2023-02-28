@@ -35,7 +35,7 @@ import java.io.IOException;
  * rear facing camera. During detection overlay graphics are drawn to indicate the position,
  * size, and ID of each barcode.
  */
-public final class BarcodeCaptureActivity extends AppCompatActivity{
+public final class BarcodeCaptureActivity extends AppCompatActivity implements BarcodeScanningActivity{
     private static final String TAG = "Barcode-reader";
 
     // intent request code to handle updating play services if needed.
@@ -167,7 +167,7 @@ public final class BarcodeCaptureActivity extends AppCompatActivity{
         // to other detection examples to enable the barcode detector to detect small barcodes
         // at long distances.
         CameraSource.Builder builder = new CameraSource.Builder(getApplicationContext(),this)
-                .setFacing(CameraSource.CAMERA_FACING_BACK)
+                .setFacing(CameraSource.CAMERA_FACING_FRONT)
                 .setRequestedPreviewSize(1600, 1024)
                 .setRequestedFps(15.0f);
 
@@ -292,6 +292,7 @@ public final class BarcodeCaptureActivity extends AppCompatActivity{
         }
     }
 
+    @Override
     public void barcodeDetectedCallback(FirebaseVisionBarcode barcode){
 
         int valueType = barcode.getValueType();

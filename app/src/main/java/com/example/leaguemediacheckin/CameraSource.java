@@ -109,7 +109,7 @@ public class CameraSource {
     private @interface FlashMode {}
 
     private Context mContext;
-    private static BarcodeCaptureActivity mActivity;
+    private static BarcodeScanningActivity mActivity;
 
     private final Object mCameraLock = new Object();
 
@@ -170,7 +170,7 @@ public class CameraSource {
          * Creates a camera source builder with the supplied context and detector.  Camera preview
          * images will be streamed to the associated detector upon starting the camera source.
          */
-        public Builder(Context context, BarcodeCaptureActivity activity) {
+        public Builder(Context context, BarcodeScanningActivity activity) {
             if (context == null) {
                 throw new IllegalArgumentException("No context supplied.");
             }

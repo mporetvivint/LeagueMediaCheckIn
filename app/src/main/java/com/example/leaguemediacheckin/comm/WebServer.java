@@ -1,5 +1,7 @@
 package com.example.leaguemediacheckin.comm;
 
+import static org.nanohttpd.protocols.http.response.Response.newFixedLengthResponse;
+
 import android.content.Context;
 import android.util.Log;
 
@@ -10,10 +12,14 @@ import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.example.leaguemediacheckin.MainActivity;
 
+import org.nanohttpd.protocols.http.IHTTPSession;
+import org.nanohttpd.protocols.http.NanoHTTPD;
+import org.nanohttpd.protocols.http.response.Response;
+import org.nanohttpd.protocols.http.response.Status;
+
 import java.util.ArrayList;
 import java.util.List;
 
-import fi.iki.elonen.NanoHTTPD;
 
 public class WebServer extends NanoHTTPD {
 
@@ -40,7 +46,7 @@ public class WebServer extends NanoHTTPD {
 
                 }
             });
-            return newFixedLengthResponse(Response.Status.OK,MIME_PLAINTEXT,"SessionEnded");
+            return newFixedLengthResponse(Status.OK,MIME_PLAINTEXT,"SessionEnded");
         }
         if (uri.equals("/beginSession")){
             try {
@@ -53,11 +59,11 @@ public class WebServer extends NanoHTTPD {
                 });
             }catch (NullPointerException e){
                 e.printStackTrace();
-                return newFixedLengthResponse(Response.Status.BAD_REQUEST,MIME_PLAINTEXT,"No Name Found");
+                return newFixedLengthResponse(Status.BAD_REQUEST,MIME_PLAINTEXT,"No Name Found");
             }
-            return newFixedLengthResponse(Response.Status.OK,MIME_PLAINTEXT,"SessionStarted");
+            return newFixedLengthResponse(Status.OK,MIME_PLAINTEXT,"SessionStarted");
         }
-        return newFixedLengthResponse(Response.Status.BAD_REQUEST,MIME_PLAINTEXT,"Watchu takin' bout??");
+        return newFixedLengthResponse(Status.BAD_REQUEST,MIME_PLAINTEXT,"Watchu takin' bout??");
     }
 }
 
