@@ -1,7 +1,7 @@
 package com.example.leaguemediacheckin.comm;
 import android.content.Context;
+import android.media.MediaDrm;
 import android.os.AsyncTask;
-
 import android.util.Log;
 
 
@@ -12,26 +12,36 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.example.leaguemediacheckin.MainActivity;
+import com.example.leaguemediacheckin.WebRequestReceiver;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
-import static android.content.Context.WIFI_SERVICE;
-
-public class SendRep extends AsyncTask<Void,Void,String> {
+public class WebRequest extends AsyncTask<Void,Void,String> {
 
     String ip_address;
     String badge_uid;
 
     private OnEventListener<String> callBack;
     private Context context;
+    private WebRequestReceiver webRequestReceiver;
 
-    public SendRep(String ip_address, String badge_uid, OnEventListener callBack, Context context) {
+    //Constructor for sending rep
+    public WebRequest(String ip_address, String badge_uid, OnEventListener callBack, Context context) {
         this.ip_address = ip_address;
         this.badge_uid = badge_uid;
         this.callBack = callBack;
         this.context = context;
+        this.webRequestReceiver = (WebRequestReceiver) context;
+    }
+
+    public WebRequest(String request_url, OnEventListener callBack, Context context, WebRequestReceiver requestReceiver){
+        this.ip_address = request_url;
+        this.badge_uid = null;
+        this.callBack = callBack;
+        this.context = context;
+        this.webRequestReceiver = requestReceiver;
     }
 
     @Override
@@ -57,35 +67,37 @@ public class SendRep extends AsyncTask<Void,Void,String> {
 
     private StringRequest createRequest(){
 
-        //fix strings
-        badge_uid = badge_uid.trim();
+        String URL;
+        if(badge_uid != null) {
+            try {
+                //fix strings
+                badge_uid = badge_uid.trim();
+                badge_uid = URLEncoder.encode(badge_uid, String.valueOf(StandardCharsets.UTF_8));
 
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
 
-        try {
-            badge_uid = URLEncoder.encode(badge_uid, String.valueOf(StandardCharsets.UTF_8));
-
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
+            URL = ip_address + "/searchrep?uid=" + badge_uid;
+        }else{
+            URL = ip_address;
         }
 
-        String scriptURL = ip_address + "/searchrep?uid=" + badge_uid;
-
-
-        return new StringRequest(Request.Method.GET, scriptURL,
+        return new StringRequest(Request.Method.GET, URL,
                 new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
-                        callBack.onSuccess(response.toString());
-                        MainActivity activity = (MainActivity) context;
-                        activity.searchRepCallback(response);
+                        if(callBack != null) {
+                            callBack.onSuccess(response.toString());
+                        }
+                        webRequestReceiver.webRequestCallback(response,URL);
 //                        RepInfoActivity activity = (RepInfoActivity) context;
 //                        activity.makeToast("You're all Checked in!");
                     }
                 }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                MainActivity activity = (MainActivity) context;
-                activity.searchRepCallback("fail");
+                webRequestReceiver.webRequestCallback("fail",null);
             }
         });
     }

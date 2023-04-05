@@ -2,23 +2,12 @@ package com.example.leaguemediacheckin.comm;
 
 import static org.nanohttpd.protocols.http.response.Response.newFixedLengthResponse;
 
-import android.content.Context;
-import android.util.Log;
-
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.StringRequest;
-import com.android.volley.toolbox.Volley;
 import com.example.leaguemediacheckin.MainActivity;
 
 import org.nanohttpd.protocols.http.IHTTPSession;
 import org.nanohttpd.protocols.http.NanoHTTPD;
 import org.nanohttpd.protocols.http.response.Response;
 import org.nanohttpd.protocols.http.response.Status;
-
-import java.util.ArrayList;
-import java.util.List;
 
 
 public class WebServer extends NanoHTTPD {
@@ -54,7 +43,7 @@ public class WebServer extends NanoHTTPD {
                 main.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        main.searchRepCallback(name);
+                        main.webRequestCallback(name,null);
                     }
                 });
             }catch (NullPointerException e){

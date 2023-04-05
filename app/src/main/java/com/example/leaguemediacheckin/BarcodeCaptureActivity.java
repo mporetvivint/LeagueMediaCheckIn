@@ -15,6 +15,8 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.util.Log;
 import android.view.View;
@@ -29,6 +31,7 @@ import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcode;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 /**
  * Activity for the multi-tracker app.  This app detects barcodes and displays the value with the
@@ -53,6 +56,9 @@ public final class BarcodeCaptureActivity extends AppCompatActivity implements B
 
     private TextView txt_ip;
     private Button btn_ip;
+    private RecyclerView recycler_server;
+    private ArrayList<ServerObject> servers; //A list of available servers
+    private ServerListAdapter adapter;
 
     /**
      * Initializes the UI and creates the detector pipeline.
@@ -61,6 +67,7 @@ public final class BarcodeCaptureActivity extends AppCompatActivity implements B
     public void onCreate(Bundle icicle) {
         super.onCreate(icicle);
         setContentView(R.layout.barcode_capture);
+        servers = new ArrayList<>();
 
         mPreview = (CameraSourcePreview) findViewById(R.id.preview);
         // read parameters from the intent used to launch the activity.
@@ -87,6 +94,21 @@ public final class BarcodeCaptureActivity extends AppCompatActivity implements B
                 startTeleprompterActivity(ip_address);
             }
         });
+
+        //Setup Recycler View
+        recycler_server = (RecyclerView) findViewById(R.id.recycler_server_list);
+        servers = new ArrayList<>();
+//        servers.add(new ServerObject("Name A","nothing",0));
+//        servers.add(new ServerObject("Name B","Nowhere",1));
+//        servers.add(new ServerObject("Name C","Notime",3));
+
+        adapter = new ServerListAdapter(servers);
+        // Set CustomAdapter as the adapter for RecyclerView
+        recycler_server.setLayoutManager(new LinearLayoutManager(this));
+        recycler_server.setAdapter(adapter);
+
+        //Start MDNS service
+        MDNSListener mdnsListener = new MDNSListener(this);
     }
 
 
@@ -303,6 +325,13 @@ public final class BarcodeCaptureActivity extends AppCompatActivity implements B
 
             startTeleprompterActivity(url);
         }
+    }
+
+    @Override
+    public void mdnsCallback(ServerObject serverObject) {
+        Log.d("MDNS","MDNS callback");
+        servers.add(serverObject);
+        adapter.notifyDataSetChanged();
     }
 
     private void startTeleprompterActivity(String controller_ip_address){

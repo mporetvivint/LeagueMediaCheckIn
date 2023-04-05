@@ -12,7 +12,6 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
@@ -30,7 +29,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.leaguemediacheckin.comm.OnEventListener;
-import com.example.leaguemediacheckin.comm.SendRep;
+import com.example.leaguemediacheckin.comm.WebRequest;
 import com.example.leaguemediacheckin.comm.UsbComm;
 import com.example.leaguemediacheckin.comm.WebServer;
 import com.google.android.gms.common.ConnectionResult;
@@ -41,10 +40,11 @@ import java.io.IOException;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 import pl.droidsonroids.gif.GifImageView;
 
-public class MainActivity extends AppCompatActivity implements BarcodeScanningActivity{
+public class MainActivity extends AppCompatActivity implements BarcodeScanningActivity, WebRequestReceiver{
 
     //Barcode Scanning
     // intent request code to handle updating play services if needed.
@@ -62,10 +62,6 @@ public class MainActivity extends AppCompatActivity implements BarcodeScanningAc
 
     private static final String TAG = "Main_Barbode_scanner";
 
-
-
-
-
     TextView txt_name;
     TextView txt_proceed;
     GifImageView gifView;
@@ -78,6 +74,7 @@ public class MainActivity extends AppCompatActivity implements BarcodeScanningAc
     Semaphore fail_semaphore;
     UsbComm usbComm;
     int portNumber;
+    Semaphore qr_read_request;
 
     private boolean busy; //State variable if we are accepting new scans
     private final Observer arduino_callback = new Observer() {
@@ -88,9 +85,7 @@ public class MainActivity extends AppCompatActivity implements BarcodeScanningAc
             if(!busy){
                 searchRep((String) o);
             }
-
         }
-
     };
 
     @Override
@@ -104,6 +99,7 @@ public class MainActivity extends AppCompatActivity implements BarcodeScanningAc
         // read parameters from the intent used to launch the activity.
         boolean autoFocus = getIntent().getBooleanExtra(AutoFocus, true);
         boolean useFlash = getIntent().getBooleanExtra(UseFlash, false);
+        qr_read_request = new Semaphore(1);
 
         // Check for the camera permission before accessing the camera.  If the
         // permission is not granted yet, request permission.
@@ -207,14 +203,15 @@ public class MainActivity extends AppCompatActivity implements BarcodeScanningAc
             gifView.setImageResource(R.drawable.main_scan);
             txt_name.animate().alpha(0f).setDuration(50).start();
             txt_proceed.animate().alpha(0f).setDuration(50).start();
+            Log.d("SEM","S_Release_NotBusy");
+            qr_read_request.release();
         }
     }
 
     private void searchRep(String badge_uid){
-        Log.d("Serially", "Searching rep" + badge_uid);
+        Log.d("SERCH", badge_uid);
         //Block Scans while searching
-        searching = true;
-        SendRep sendRep = new SendRep(this.getIntent().getStringExtra("url"),badge_uid, new OnEventListener() {
+        WebRequest sendRep = new WebRequest(this.getIntent().getStringExtra("url"),badge_uid, new OnEventListener() {
             @Override
             public void onSuccess(Object object) {
                 searching = false;
@@ -261,6 +258,8 @@ public class MainActivity extends AppCompatActivity implements BarcodeScanningAc
                     //Timer has run out
                     if(!busy) { //If a rep has been accepted we are not going to change the UI
                         gifView.setImageResource(R.drawable.main_scan);
+                        Log.d("SEM","S_Release_FailedUI");
+                        qr_read_request.release();
                     }
                     fail_handler_running = false; //We are done running
                 }
@@ -277,7 +276,8 @@ public class MainActivity extends AppCompatActivity implements BarcodeScanningAc
         fail_semaphore.release();
     }
 
-    public void searchRepCallback(String response){
+    @Override
+    public void webRequestCallback(String response, String address){
         if(response.equals("fail")){
             failedUIHandler(3);
             return;
@@ -513,13 +513,26 @@ public class MainActivity extends AppCompatActivity implements BarcodeScanningAc
     @Override
     public void barcodeDetectedCallback(FirebaseVisionBarcode barcode){
 
-        int valueType = barcode.getValueType();
-
-        if (FirebaseVisionBarcode.TYPE_TEXT == valueType && !searching && !busy) {
+        try {
+            if(!qr_read_request.tryAcquire()){
+                return;
+            }
+            Log.d("SEM","S_Acquire");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        if(barcode.getRawValue().equals("Read a B-code")){
+            return;
+        }
+        if (!searching && !busy) {
+            searching = true;
             String text = barcode.getRawValue();
-            Log.d("B-Code", text);
-
             searchRep(text);
         }
+    }
+
+    @Override
+    public void mdnsCallback(ServerObject serverObject) {
+
     }
 }
