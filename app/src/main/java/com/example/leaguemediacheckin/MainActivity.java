@@ -36,6 +36,9 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcode;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.IOException;
 import java.util.Observable;
 import java.util.Observer;
@@ -139,7 +142,7 @@ public class MainActivity extends AppCompatActivity implements BarcodeScanningAc
         if(usbComm.connect() == -1){
             //We need to prompt for connection
             btn_connect.setEnabled(true);
-            btn_connect.setAlpha(1f);
+//            btn_connect.setAlpha(1f);
         }
         else{
             usbComm.addObserver(arduino_callback);
@@ -286,8 +289,14 @@ public class MainActivity extends AppCompatActivity implements BarcodeScanningAc
 
         //Rep was found in the database, and we will now record
         busy = true;
-
-        String displayText = response.toUpperCase();
+        String displayText;
+        try {
+            JSONObject jsonObject = new JSONObject(response.substring(6));
+            displayText = jsonObject.getString("name").toUpperCase();
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return;
+        }
         txt_name.setText(displayText);
         txt_name.animate().alpha(1f).setDuration(500).start();
         txt_proceed.animate().alpha(1f).setDuration(500).start();
@@ -526,6 +535,9 @@ public class MainActivity extends AppCompatActivity implements BarcodeScanningAc
         }
         if (!searching && !busy) {
             searching = true;
+            gifView.setImageResource(R.drawable.searching);
+            MediaPlayer mediaPlayer = MediaPlayer.create(txt_name.getContext(), R.raw.magic_band_read);
+            mediaPlayer.start();
             String text = barcode.getRawValue();
             searchRep(text);
         }

@@ -321,8 +321,6 @@ public final class BarcodeCaptureActivity extends AppCompatActivity implements B
 
         if (FirebaseVisionBarcode.TYPE_URL == valueType) {
             String url = barcode.getUrl().getUrl();
-            Log.d("B-Code", url);
-
             startTeleprompterActivity(url);
         }
     }
