@@ -26,7 +26,15 @@ public class WebServer extends NanoHTTPD {
     @Override
     public Response serve(IHTTPSession session) {
         String uri = session.getUri();
-
+        if(uri.equals("/pause")){
+            main.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    main.pause();
+                }
+            });
+            return newFixedLengthResponse(Status.OK,MIME_PLAINTEXT,"SessionPaused");
+        }
         if (uri.equals("/endSession")) {
             main.runOnUiThread(new Runnable() {
                 @Override

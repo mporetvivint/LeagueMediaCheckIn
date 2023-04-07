@@ -22,6 +22,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -181,6 +182,14 @@ public class MainActivity extends AppCompatActivity implements BarcodeScanningAc
 
     }
 
+    @Override //Listen for volume button events to reset tablet status
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN || keyCode == KeyEvent.KEYCODE_VOLUME_UP){
+            setBusy(false);
+        }
+        return true;
+    }
+
     private void hideSystemBars() {
         WindowInsetsControllerCompat windowInsetsController =
                 ViewCompat.getWindowInsetsController(getWindow().getDecorView());
@@ -204,11 +213,17 @@ public class MainActivity extends AppCompatActivity implements BarcodeScanningAc
         this.busy = busy;
         if(!busy) {
             gifView.setImageResource(R.drawable.main_scan);
+            gifView.animate().alpha(.8f).setDuration(850).start();
             txt_name.animate().alpha(0f).setDuration(50).start();
             txt_proceed.animate().alpha(0f).setDuration(50).start();
             Log.d("SEM","S_Release_NotBusy");
             qr_read_request.release();
         }
+    }
+
+    public void pause(){ //temporarily pauses scanning inputs
+        setBusy(true);
+        gifView.setImageResource(R.drawable.please_wait);
     }
 
     private void searchRep(String badge_uid){
@@ -300,6 +315,7 @@ public class MainActivity extends AppCompatActivity implements BarcodeScanningAc
         txt_name.setText(displayText);
         txt_name.animate().alpha(1f).setDuration(500).start();
         txt_proceed.animate().alpha(1f).setDuration(500).start();
+        gifView.animate().alpha(1f).setDuration(850).start();
         gifView.setImageResource(R.drawable.accepted);
         MediaPlayer mediaPlayer = MediaPlayer.create(txt_name.getContext(), R.raw.magic_band_success);
         mediaPlayer.start();
