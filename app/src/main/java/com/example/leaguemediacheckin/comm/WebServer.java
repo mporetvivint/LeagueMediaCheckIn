@@ -2,6 +2,8 @@ package com.example.leaguemediacheckin.comm;
 
 import static org.nanohttpd.protocols.http.response.Response.newFixedLengthResponse;
 
+import android.util.Log;
+
 import com.example.leaguemediacheckin.MainActivity;
 
 import org.nanohttpd.protocols.http.IHTTPSession;
@@ -47,11 +49,11 @@ public class WebServer extends NanoHTTPD {
         }
         if (uri.equals("/beginSession")){
             try {
-                String name = session.getParameters().get("name").get(0);
+                String rep = session.getParameters().get("rep").get(0);
                 main.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        main.webRequestCallback(name,null);
+                        main.webRequestCallback(rep,null);
                     }
                 });
             }catch (NullPointerException e){

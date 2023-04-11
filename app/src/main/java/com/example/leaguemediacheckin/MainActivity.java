@@ -301,11 +301,11 @@ public class MainActivity extends AppCompatActivity implements BarcodeScanningAc
             return;
         }
 
-
         //Rep was found in the database, and we will now record
         busy = true;
         String displayText;
         try {
+            String shorter = response.substring(6);
             JSONObject jsonObject = new JSONObject(response.substring(6));
             displayText = jsonObject.getString("name").toUpperCase();
         } catch (JSONException e) {
