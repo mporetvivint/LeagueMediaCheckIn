@@ -88,11 +88,13 @@ public class WebRequest extends AsyncTask<Void,Void,String> {
                     @Override
                     public void onResponse(String response) {
                         if(callBack != null) {
-                            callBack.onSuccess(response.toString());
+                            callBack.onSuccess(response);
                         }
-                        webRequestReceiver.webRequestCallback(response,URL);
+                        if(webRequestReceiver!=null) {
+                            webRequestReceiver.webRequestCallback(response, URL);
 //                        RepInfoActivity activity = (RepInfoActivity) context;
 //                        activity.makeToast("You're all Checked in!");
+                        }
                     }
                 }, new Response.ErrorListener() {
             @Override

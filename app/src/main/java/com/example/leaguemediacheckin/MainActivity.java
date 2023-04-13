@@ -1,5 +1,8 @@
 package com.example.leaguemediacheckin;
 
+import static org.nanohttpd.protocols.http.NanoHTTPD.MIME_PLAINTEXT;
+import static org.nanohttpd.protocols.http.response.Response.newFixedLengthResponse;
+
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -33,14 +36,19 @@ import com.example.leaguemediacheckin.comm.OnEventListener;
 import com.example.leaguemediacheckin.comm.WebRequest;
 import com.example.leaguemediacheckin.comm.UsbComm;
 import com.example.leaguemediacheckin.comm.WebServer;
+import com.example.leaguemediacheckin.comm.WebServerReceiver;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcode;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.nanohttpd.protocols.http.response.Response;
+import org.nanohttpd.protocols.http.response.Status;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.concurrent.Semaphore;
@@ -48,7 +56,7 @@ import java.util.concurrent.TimeUnit;
 
 import pl.droidsonroids.gif.GifImageView;
 
-public class MainActivity extends AppCompatActivity implements BarcodeScanningActivity, WebRequestReceiver{
+public class MainActivity extends AppCompatActivity implements BarcodeScanningActivity, WebRequestReceiver, WebServerReceiver {
 
     //Barcode Scanning
     // intent request code to handle updating play services if needed.
@@ -562,5 +570,44 @@ public class MainActivity extends AppCompatActivity implements BarcodeScanningAc
     @Override
     public void mdnsCallback(ServerObject serverObject) {
 
+    }
+
+    @Override
+    public Response serverResponse(String uri, Map<String, List<String>> params) {
+        if(uri.equals("/pause")){
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    pause();
+                }
+            });
+            return newFixedLengthResponse(Status.OK,MIME_PLAINTEXT,"SessionPaused");
+        }
+        if (uri.equals("/endSession")) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    setBusy(false);
+
+                }
+            });
+            return newFixedLengthResponse(Status.OK,MIME_PLAINTEXT,"SessionEnded");
+        }
+        if (uri.equals("/beginSession")){
+            try {
+                String rep = params.get("rep").get(0);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        webRequestCallback(rep,null);
+                    }
+                });
+            }catch (NullPointerException e){
+                e.printStackTrace();
+                return newFixedLengthResponse(Status.BAD_REQUEST,MIME_PLAINTEXT,"No Name Found");
+            }
+            return newFixedLengthResponse(Status.OK,MIME_PLAINTEXT,"SessionStarted");
+        }
+        return newFixedLengthResponse(Status.BAD_REQUEST,MIME_PLAINTEXT,"Watchu takin' bout??");
     }
 }

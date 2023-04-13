@@ -21,9 +21,10 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.Switch;
 import android.widget.TextView;
 
+import com.example.leaguemediacheckin.comm.OnEventListener;
+import com.example.leaguemediacheckin.comm.WebRequest;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 
@@ -32,13 +33,14 @@ import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcode;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.concurrent.Semaphore;
 
 /**
  * Activity for the multi-tracker app.  This app detects barcodes and displays the value with the
  * rear facing camera. During detection overlay graphics are drawn to indicate the position,
  * size, and ID of each barcode.
  */
-public final class BarcodeCaptureActivity extends AppCompatActivity implements BarcodeScanningActivity{
+public final class BarcodeCaptureActivity extends AppCompatActivity implements BarcodeScanningActivity, WebRequestReceiver{
     private static final String TAG = "Barcode-reader";
 
     // intent request code to handle updating play services if needed.
@@ -59,6 +61,7 @@ public final class BarcodeCaptureActivity extends AppCompatActivity implements B
     private RecyclerView recycler_server;
     private ArrayList<ServerObject> servers; //A list of available servers
     private ServerListAdapter adapter;
+    private Semaphore barcodeRead; //do not allow more than one barcode read at a time
 
     /**
      * Initializes the UI and creates the detector pipeline.
@@ -68,6 +71,7 @@ public final class BarcodeCaptureActivity extends AppCompatActivity implements B
         super.onCreate(icicle);
         setContentView(R.layout.barcode_capture);
         servers = new ArrayList<>();
+        barcodeRead = new Semaphore(1);
 
         mPreview = (CameraSourcePreview) findViewById(R.id.preview);
         // read parameters from the intent used to launch the activity.
@@ -91,7 +95,7 @@ public final class BarcodeCaptureActivity extends AppCompatActivity implements B
                 String ip_address = txt_ip.getText().toString();
                 if(ip_address.equals(""))
                     return;
-                startTeleprompterActivity(ip_address);
+                startActivity(ip_address);
             }
         });
 
@@ -316,12 +320,13 @@ public final class BarcodeCaptureActivity extends AppCompatActivity implements B
 
     @Override
     public void barcodeDetectedCallback(FirebaseVisionBarcode barcode){
+        if(barcodeRead.tryAcquire()) {
+            int valueType = barcode.getValueType();
 
-        int valueType = barcode.getValueType();
-
-        if (FirebaseVisionBarcode.TYPE_URL == valueType) {
-            String url = barcode.getUrl().getUrl();
-            startTeleprompterActivity(url);
+            if (FirebaseVisionBarcode.TYPE_URL == valueType) {
+                String url = barcode.getUrl().getUrl();
+                startActivity(url);
+            }
         }
     }
 
@@ -332,11 +337,33 @@ public final class BarcodeCaptureActivity extends AppCompatActivity implements B
         adapter.notifyDataSetChanged();
     }
 
-    private void startTeleprompterActivity(String controller_ip_address){
-        Intent intent = new Intent(this, MainActivity.class);
-        intent.putExtra("url",controller_ip_address);
-        startActivity(intent);
+    private void startActivity(String server_ip_address){
+        //Decide which activity to start
+
+        WebRequest queryStatus = new WebRequest(server_ip_address+"/register",null, new OnEventListener() {
+            @Override
+            public void onSuccess(Object object) {
+            }
+
+            @Override
+            public void onFail(){
+            }
+        }, this);
+        queryStatus.execute();
     }
 
-
+    @Override
+    public void webRequestCallback(String response, String address) {
+        address = address.replace("/register","");
+        if(response.equals("Record")){
+            Intent photoboothIntent = new Intent(this, MainActivity.class);
+            photoboothIntent.putExtra("url",address);
+            startActivity(photoboothIntent);
+        }else if(response.equals("Display")){
+            Intent displayIntent = new Intent(this, DisplayActivity.class);
+            displayIntent.putExtra("url",address);
+            startActivity(displayIntent);
+        }else if(barcodeRead.availablePermits() == 0)
+            barcodeRead.release();
+    }
 }
