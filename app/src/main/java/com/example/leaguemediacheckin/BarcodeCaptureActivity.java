@@ -10,6 +10,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.hardware.Camera;
+import android.media.MediaPlayer;
 import android.os.Build;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
@@ -57,11 +58,15 @@ public final class BarcodeCaptureActivity extends AppCompatActivity implements B
     private CameraSourcePreview mPreview;
 
     private TextView txt_ip;
+    private TextView txt_message;
     private Button btn_ip;
     private RecyclerView recycler_server;
     private ArrayList<ServerObject> servers; //A list of available servers
     private ServerListAdapter adapter;
     private Semaphore barcodeRead; //do not allow more than one barcode read at a time
+    private String rfid_address; //Store rfid address;
+    private MediaPlayer mediaSuccess;
+    private MediaPlayer mediaFail;
 
     /**
      * Initializes the UI and creates the detector pipeline.
@@ -72,6 +77,10 @@ public final class BarcodeCaptureActivity extends AppCompatActivity implements B
         setContentView(R.layout.barcode_capture);
         servers = new ArrayList<>();
         barcodeRead = new Semaphore(1);
+        rfid_address = null;
+        mediaFail = MediaPlayer.create(this, R.raw.error_sound);
+        mediaSuccess = MediaPlayer.create(this, R.raw.magic_band_read);
+
 
         mPreview = (CameraSourcePreview) findViewById(R.id.preview);
         // read parameters from the intent used to launch the activity.
@@ -87,6 +96,7 @@ public final class BarcodeCaptureActivity extends AppCompatActivity implements B
             requestCameraPermission();
         }
 
+        txt_message = findViewById(R.id.txt_barcode_msg);
         txt_ip = findViewById(R.id.txt_ip_entry);
         btn_ip = findViewById(R.id.btn_ip_entry);
         btn_ip.setOnClickListener(new View.OnClickListener() {
@@ -193,7 +203,7 @@ public final class BarcodeCaptureActivity extends AppCompatActivity implements B
         // to other detection examples to enable the barcode detector to detect small barcodes
         // at long distances.
         CameraSource.Builder builder = new CameraSource.Builder(getApplicationContext(),this)
-                .setFacing(CameraSource.CAMERA_FACING_FRONT)
+                .setFacing(CameraSource.CAMERA_FACING_BACK)
                 .setRequestedPreviewSize(1600, 1024)
                 .setRequestedFps(15.0f);
 
@@ -321,12 +331,9 @@ public final class BarcodeCaptureActivity extends AppCompatActivity implements B
     @Override
     public void barcodeDetectedCallback(FirebaseVisionBarcode barcode){
         if(barcodeRead.tryAcquire()) {
-            int valueType = barcode.getValueType();
+            String url = barcode.getRawValue();
+            startActivity(url);
 
-            if (FirebaseVisionBarcode.TYPE_URL == valueType) {
-                String url = barcode.getUrl().getUrl();
-                startActivity(url);
-            }
         }
     }
 
@@ -339,6 +346,15 @@ public final class BarcodeCaptureActivity extends AppCompatActivity implements B
 
     private void startActivity(String server_ip_address){
         //Decide which activity to start
+        if(server_ip_address.contains("speedway")){
+            rfid_address = server_ip_address;
+            mediaSuccess.start();
+            txt_message.setText("RFID Scanned - Please Scan Server");
+            if(barcodeRead.availablePermits() == 0){
+                barcodeRead.release();
+            }
+            return;
+        }
 
         WebRequest queryStatus = new WebRequest(server_ip_address+"/register",null, new OnEventListener() {
             @Override
@@ -363,6 +379,19 @@ public final class BarcodeCaptureActivity extends AppCompatActivity implements B
             Intent displayIntent = new Intent(this, DisplayActivity.class);
             displayIntent.putExtra("url",address);
             startActivity(displayIntent);
+        }else if(response.equals("Server")){
+            if(rfid_address!=null){
+                Intent gateIntent = new Intent(this,GateEntranceActivity.class);
+                gateIntent.putExtra("url",address);
+                gateIntent.putExtra("rfid",rfid_address);
+                startActivity(gateIntent);
+            }else{//rfid needs to be scanned first
+                txt_message.setText("Scan RFID code first");
+                mediaFail.start();
+                if(barcodeRead.availablePermits() == 0){
+                    barcodeRead.release();
+                }
+            }
         }else if(barcodeRead.availablePermits() == 0)
             barcodeRead.release();
     }

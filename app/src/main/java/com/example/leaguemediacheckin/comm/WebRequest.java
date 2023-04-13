@@ -22,6 +22,7 @@ public class WebRequest extends AsyncTask<Void,Void,String> {
 
     String ip_address;
     String badge_uid;
+    boolean gateEntrance;
 
     private OnEventListener<String> callBack;
     private Context context;
@@ -42,6 +43,15 @@ public class WebRequest extends AsyncTask<Void,Void,String> {
         this.callBack = callBack;
         this.context = context;
         this.webRequestReceiver = requestReceiver;
+    }
+
+    public WebRequest(String request_url, String badge_uid, Context context, WebRequestReceiver requestReceiver,boolean gateEntrance){
+        this.ip_address = request_url;
+        this.badge_uid = badge_uid;
+        this.callBack = null;
+        this.context = context;
+        this.webRequestReceiver = requestReceiver;
+        this.gateEntrance = gateEntrance;
     }
 
     @Override
@@ -68,7 +78,18 @@ public class WebRequest extends AsyncTask<Void,Void,String> {
     private StringRequest createRequest(){
 
         String URL;
-        if(badge_uid != null) {
+        if(gateEntrance){
+            try {
+                //fix strings
+                badge_uid = badge_uid.trim();
+                badge_uid = URLEncoder.encode(badge_uid, String.valueOf(StandardCharsets.UTF_8));
+
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
+            URL = ip_address + "/entranceSearch?uid=" + badge_uid;
+
+        }else if(badge_uid != null) {
             try {
                 //fix strings
                 badge_uid = badge_uid.trim();
