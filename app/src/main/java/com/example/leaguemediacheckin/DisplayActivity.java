@@ -71,6 +71,7 @@ public class DisplayActivity extends AppCompatActivity implements BarcodeScannin
     private MediaPlayer mediaFail;
     private TimerThread timerThread;
     private WebServer server;
+    private String url;
     private int portNumber;
     private final int WALK_TIME = 10; //Number of seconds to delay between reps
 
@@ -81,13 +82,14 @@ public class DisplayActivity extends AppCompatActivity implements BarcodeScannin
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_display);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        getSupportActionBar().hide();
-        hideSystemBars();
+//        getSupportActionBar().hide();
+//        hideSystemBars();
 
         mediaSuccess = MediaPlayer.create(this, R.raw.magic_band_read);
         mediaFail = MediaPlayer.create(this, R.raw.error_sound);
         timerThread = new TimerThread();
 
+        url = this.getIntent().getStringExtra("url");
         //Setup web server
         //Start Server We'll Loop until we get a good port number
         boolean searching = true;
@@ -150,7 +152,18 @@ public class DisplayActivity extends AppCompatActivity implements BarcodeScannin
         btn_cancel.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                cancelRequest.execute();
+                WebRequest cancel = new WebRequest(url+"/cancel",null, new OnEventListener() {
+                    @Override
+                    public void onSuccess(Object object) {
+
+                    }
+
+                    @Override
+                    public void onFail(){
+
+                    }
+                }, view.getContext());
+                cancel.execute();
                 message_view.setText("Ready");
                 if(qr_read_request.availablePermits() == 0){
                     qr_read_request.release();
@@ -168,11 +181,23 @@ public class DisplayActivity extends AppCompatActivity implements BarcodeScannin
                 timerThread.stopTimer();
                 btn_send.setEnabled(false);
                 btn_cancel.setEnabled(false);
-                takeRepRequest.execute();
+                WebRequest take = new WebRequest(url+"/displaytake",null, new OnEventListener() {
+                    @Override
+                    public void onSuccess(Object object) {
+
+                    }
+
+                    @Override
+                    public void onFail(){
+
+                    }
+                }, view.getContext());
+                take.execute();
                 message_view.setText("Ready");
                 if(qr_read_request.availablePermits() == 0){
                     qr_read_request.release();
                 }
+
                 Thread tm = new Thread(timerThread);
                 tm.start();
 
