@@ -380,18 +380,10 @@ public final class BarcodeCaptureActivity extends AppCompatActivity implements B
             displayIntent.putExtra("url",address);
             startActivity(displayIntent);
         }else if(response.equals("Server")){
-            if(rfid_address!=null){
-                Intent gateIntent = new Intent(this,GateEntranceActivity.class);
-                gateIntent.putExtra("url",address);
-                gateIntent.putExtra("rfid",rfid_address);
-                startActivity(gateIntent);
-            }else{//rfid needs to be scanned first
-                txt_message.setText("Scan RFID code first");
-                mediaFail.start();
-                if(barcodeRead.availablePermits() == 0){
-                    barcodeRead.release();
-                }
-            }
+            Intent repSignInIntent = new Intent(this, RepSignInActivity.class);
+            repSignInIntent.putExtra("url",address);
+            startActivity(repSignInIntent);
+
         }else if(barcodeRead.availablePermits() == 0)
             barcodeRead.release();
     }

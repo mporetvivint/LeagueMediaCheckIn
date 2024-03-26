@@ -12,7 +12,11 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.example.leaguemediacheckin.MainActivity;
+import com.example.leaguemediacheckin.Rep;
 import com.example.leaguemediacheckin.WebRequestReceiver;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -23,6 +27,9 @@ public class WebRequest extends AsyncTask<Void,Void,String> {
     String ip_address;
     String badge_uid;
     boolean gateEntrance;
+    Rep addedRep;
+    boolean isAddRepActivity;
+
 
     private OnEventListener<String> callBack;
     private Context context;
@@ -35,6 +42,7 @@ public class WebRequest extends AsyncTask<Void,Void,String> {
         this.callBack = callBack;
         this.context = context;
         this.webRequestReceiver = (WebRequestReceiver) context;
+        isAddRepActivity = false;
     }
 
     public WebRequest(String request_url, OnEventListener callBack, Context context, WebRequestReceiver requestReceiver){
@@ -43,6 +51,7 @@ public class WebRequest extends AsyncTask<Void,Void,String> {
         this.callBack = callBack;
         this.context = context;
         this.webRequestReceiver = requestReceiver;
+        isAddRepActivity = false;
     }
 
     public WebRequest(String request_url, String badge_uid, Context context, WebRequestReceiver requestReceiver,boolean gateEntrance){
@@ -52,11 +61,22 @@ public class WebRequest extends AsyncTask<Void,Void,String> {
         this.context = context;
         this.webRequestReceiver = requestReceiver;
         this.gateEntrance = gateEntrance;
+        isAddRepActivity = false;
+    }
+
+
+    //Constructor for adding new rep
+    public WebRequest(String ip_address,Rep addedRep,OnEventListener callBack,Context context,boolean addrep){
+        this.ip_address = ip_address;
+        this.addedRep = addedRep;
+        this.callBack = callBack;
+        this.context = context;
+        isAddRepActivity = addrep;
     }
 
     @Override
     protected void onPostExecute(String s) {
-        if(callBack != null){
+        if(callBack != null && !isAddRepActivity){
             callBack.onSuccess(s);
         }
     }
@@ -78,16 +98,9 @@ public class WebRequest extends AsyncTask<Void,Void,String> {
     private StringRequest createRequest(){
 
         String URL;
-        if(gateEntrance){
-            try {
-                //fix strings
-                badge_uid = badge_uid.trim();
-                badge_uid = URLEncoder.encode(badge_uid, String.valueOf(StandardCharsets.UTF_8));
-
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
-            }
-            URL = ip_address + "/entranceSearch?uid=" + badge_uid;
+        if(addedRep != null){
+            URL = ip_address + "/addrep?fn="+URLEncoder.encode(addedRep.getName())+"&em="+URLEncoder.encode(addedRep.getEmail())
+            +"&uid="+URLEncoder.encode(addedRep.getEmail())+"&entrance=0";
 
         }else if(badge_uid != null) {
             try {
@@ -110,8 +123,7 @@ public class WebRequest extends AsyncTask<Void,Void,String> {
                     public void onResponse(String response) {
                         if(callBack != null) {
                             callBack.onSuccess(response);
-                        }
-                        if(webRequestReceiver!=null) {
+                        }if(webRequestReceiver!=null) {
                             webRequestReceiver.webRequestCallback(response, URL);
 //                        RepInfoActivity activity = (RepInfoActivity) context;
 //                        activity.makeToast("You're all Checked in!");
@@ -120,7 +132,12 @@ public class WebRequest extends AsyncTask<Void,Void,String> {
                 }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                webRequestReceiver.webRequestCallback("fail",null);
+                if(callBack != null){
+                    callBack.onFail();
+                }
+                if(webRequestReceiver!=null) {
+                    webRequestReceiver.webRequestCallback("fail", null);
+                }
             }
         });
     }

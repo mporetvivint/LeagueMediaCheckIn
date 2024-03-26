@@ -47,14 +47,19 @@ import org.nanohttpd.protocols.http.response.Response;
 import org.nanohttpd.protocols.http.response.Status;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
 
 import pl.droidsonroids.gif.GifImageView;
+
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 public class MainActivity extends AppCompatActivity implements BarcodeScanningActivity, WebRequestReceiver, WebServerReceiver {
 
@@ -68,6 +73,10 @@ public class MainActivity extends AppCompatActivity implements BarcodeScanningAc
     // constants used to pass extra data in the intent
     public static final String AutoFocus = "AutoFocus";
     public static final String UseFlash = "UseFlash";
+
+    //QR code decryption
+    private static final String ENCRYPTION_ALGORITHM = "AES";
+    private static final String ENCRYPTION_MODE = "AES/CBC/PKCS5Padding"; // No IV, using PKCS5Padding
 
     private CameraSource mCameraSource;
     private CameraSourcePreview mPreview;
@@ -235,20 +244,90 @@ public class MainActivity extends AppCompatActivity implements BarcodeScanningAc
     }
 
     private void searchRep(String badge_uid){
-        Log.d("SERCH", badge_uid);
-        //Block Scans while searching
-        WebRequest sendRep = new WebRequest(this.getIntent().getStringExtra("url"),badge_uid, new OnEventListener() {
-            @Override
-            public void onSuccess(Object object) {
-                searching = false;
+        String decrypted_badge_uid = null;
+        try {
+//            decrypted_badge_uid = decrypt(badge_uid,"runpass96%PASS");
+//            Log.d("SERCH", decrypted_badge_uid);
+            //Block Scans while searching
+
+            try {
+                // Try parsing the string as JSON
+                JSONObject repJSON = new JSONObject(badge_uid);
+                // If no exception is thrown, then it's a valid JSON
+                repJSON.put("badgeID",repJSON.get("email"));
+                repJSON.put("type","STANDARD");
+                repJSON.put("entrance",0);
+                repJSON.put("additions",
+                        "rO0ABXNyABNqYXZhLnV0aWwuQXJyYXlMaXN0eIHSHZnHYZ0DAAFJAARzaXpleHAAAAAAdwQAAAAAeA==");
+
+                Rep repAdder = new Rep(repJSON.toString());
+                badge_uid = repAdder.getBadgeID();
+                //Add rep to database
+                WebRequest addRepRequest = new WebRequest(getIntent().getStringExtra("url"), repAdder, new OnEventListener() {
+                    @Override
+                    public void onSuccess(Object object) {
+                        String output = object.toString();
+                        output += " ";
+                    }
+
+                    @Override
+                    public void onFail() {
+                        searching = false;
+                    }
+                },this,true);
+                addRepRequest.execute();
+
+            } catch (Exception e) {
+                // If an exception is thrown, then it's likely plain text
             }
 
-            @Override
-            public void onFail(){
-                searching = false;
-            }
-        }, this);
-        sendRep.execute();
+            WebRequest sendRep = new WebRequest(this.getIntent().getStringExtra("url"),badge_uid, new OnEventListener() {
+                @Override
+                public void onSuccess(Object object) {
+                    searching = false;
+                }
+
+                @Override
+                public void onFail(){
+                    searching = false;
+                }
+            }, this);
+            sendRep.execute();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
+    }
+
+    public static String decrypt(String encryptedText, String key) throws Exception {
+        // Decode the base64 encoded encrypted text
+        byte[] encryptedData = Base64.getDecoder().decode(encryptedText);
+
+        // Create a secret key
+        byte[] keyBytes = key.getBytes(StandardCharsets.UTF_8);
+        SecretKeySpec secretKeySpec = new SecretKeySpec(keyBytes, ENCRYPTION_ALGORITHM);
+
+        // Initialize the cipher in decryption mode
+        Cipher cipher = Cipher.getInstance(ENCRYPTION_MODE);
+        cipher.init(Cipher.DECRYPT_MODE, secretKeySpec);
+
+        // Perform the decryption
+        byte[] decryptedData = cipher.doFinal(encryptedData);
+
+        return new String(decryptedData, StandardCharsets.UTF_8);
+    }
+
+    public static void main(String[] args) {
+        try {
+            String encryptedText = "YOUR_ENCRYPTED_STRING_HERE";
+            String key = "YOUR_SECRET_KEY_HERE";
+
+            String decryptedText = decrypt(encryptedText, key);
+            System.out.println("Decrypted Text: " + decryptedText);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
 //    Function to handle changing and timing the "try again" screen
